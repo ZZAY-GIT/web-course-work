@@ -1,0 +1,44 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="white", splines=ortho, nodesep=0.65, ranksep=0.9, fontname="DejaVu Sans"];
+  node [fontname="DejaVu Sans", fontsize=11];
+  edge [fontname="DejaVu Sans", fontsize=10, arrowsize=0.7];
+
+  patient [shape=box, label="Пациент", style="rounded,filled", fillcolor="#f2f2f2"];
+  doctor [shape=box, label="Врач", style="rounded,filled", fillcolor="#f2f2f2"];
+  admin [shape=box, label="Администратор", style="rounded,filled", fillcolor="#f2f2f2"];
+
+  subgraph cluster_system {
+    label="Веб-приложение частной клиники";
+    fontname="DejaVu Sans";
+    fontsize=13;
+    color="#777777";
+    style="rounded";
+    login [shape=ellipse, label="Авторизация"];
+    book [shape=ellipse, label="Запись на прием"];
+    cancel [shape=ellipse, label="Отмена записи"];
+    history [shape=ellipse, label="Просмотр истории\nпосещений"];
+    schedule [shape=ellipse, label="Просмотр расписания"];
+    medcard [shape=ellipse, label="Ведение медицинской\nкарты"];
+    docs [shape=ellipse, label="Работа с\nдокументами"];
+    manage_schedule [shape=ellipse, label="Управление\nрасписанием"];
+    manage_users [shape=ellipse, label="Управление\nпользователями"];
+    manage_services [shape=ellipse, label="Управление\nуслугами"];
+  }
+
+  patient -> login;
+  patient -> book;
+  patient -> cancel;
+  patient -> history;
+  patient -> docs;
+
+  doctor -> login;
+  doctor -> schedule;
+  doctor -> medcard;
+  doctor -> docs;
+
+  admin -> login;
+  admin -> manage_schedule;
+  admin -> manage_users;
+  admin -> manage_services;
+  admin -> book;
+}

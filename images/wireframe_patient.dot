@@ -1,0 +1,24 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", nodesep=0.35, ranksep=0.45, fontname="DejaVu Sans"];
+  node [shape=box, fontname="DejaVu Sans", fontsize=11, style="rounded,filled", fillcolor="#f8f8f8"];
+  edge [style=invis];
+
+  header [label="Верхнее меню: логотип | записаться | мои приемы | медкарта | профиль", width=7.5];
+  content [label="Главный экран личного кабинета", width=7.5];
+  row1 [label="Ближайшая запись\nврач, дата, кабинет", width=3.3];
+  row2 [label="Быстрая запись\nвыбор услуги и врача", width=3.3];
+  row3 [label="История посещений\nтаблица визитов", width=3.3];
+  row4 [label="Медицинские документы\nфайлы и заключения", width=3.3];
+  footer [label="Уведомления и сообщения системы", width=7.5];
+
+  header -> content;
+  content -> row1;
+  content -> row2;
+  row1 -> row3;
+  row2 -> row4;
+  row3 -> footer;
+  row4 -> footer;
+
+  {rank=same; row1; row2;}
+  {rank=same; row3; row4;}
+}

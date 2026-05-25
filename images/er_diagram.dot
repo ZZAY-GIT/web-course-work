@@ -1,0 +1,28 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="white", splines=polyline, nodesep=0.6, ranksep=0.75, fontname="DejaVu Sans"];
+  node [shape=record, fontname="DejaVu Sans", fontsize=10, style="rounded,filled", fillcolor="#f8f8f8"];
+  edge [fontname="DejaVu Sans", fontsize=9, arrowsize=0.7];
+
+  users [label="{users|id PK\lemail\lpassword_hash\lrole\l}"];
+  patients [label="{patients|id PK\luser_id FK\lfull_name\lbirth_date\lphone\l}"];
+  doctors [label="{doctors|id PK\luser_id FK\lfull_name\lspecialization\lcabinet\l}"];
+  services [label="{services|id PK\ltitle\lprice\lduration\l}"];
+  slots [label="{schedule_slots|id PK\ldoctor_id FK\ldate\lstart_time\lend_time\lstatus\l}"];
+  appointments [label="{appointments|id PK\lpatient_id FK\ldoctor_id FK\lservice_id FK\lslot_id FK\lstatus\l}"];
+  records [label="{medical_records|id PK\lpatient_id FK\lcreated_at\lupdated_at\l}"];
+  visits [label="{visits|id PK\lrecord_id FK\lappointment_id FK\ldiagnosis\lrecommendations\l}"];
+  documents [label="{documents|id PK\lpatient_id FK\lvisit_id FK\lfile_path\lfile_type\l}"];
+
+  users -> patients [label="1:1"];
+  users -> doctors [label="1:1"];
+  doctors -> slots [label="1:N"];
+  patients -> appointments [label="1:N"];
+  doctors -> appointments [label="1:N"];
+  services -> appointments [label="1:N"];
+  slots -> appointments [label="1:1"];
+  patients -> records [label="1:1"];
+  records -> visits [label="1:N"];
+  appointments -> visits [label="1:0..1"];
+  patients -> documents [label="1:N"];
+  visits -> documents [label="1:N"];
+}
