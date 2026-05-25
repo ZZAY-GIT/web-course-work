@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    image: clinic-app:latest
+    container_name: clinic_web_container
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_DEBUG=1
+      - SECRET_KEY=clinic-super-secret-key-2026
+    volumes:
+      # Монтирование тома для сохранения локальной базы данных SQLite на хост-машине
+      - ./clinic_app/instance:/app/clinic_app/instance
+      # Монтирование тома для сохранения медицинских документов и заключений врачей
+      - ./clinic_app/static/uploads:/app/clinic_app/static/uploads
+    restart: always

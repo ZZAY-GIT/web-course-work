@@ -24,3 +24,6 @@ instance/
 *.log
 clinic_app/instance/
 clinic_app/clinic.db
+
+# Игнорировать сборочный Docker Compose
+docker-compose.yml

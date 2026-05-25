@@ -59,7 +59,7 @@ def auth_page():
 
 
 @app.route('/login', methods=['POST'])
-def login_route_post():
+def login_route():
     email = request.form.get('email')
     password = request.form.get('password')
     
@@ -273,7 +273,11 @@ def download_document(doc_id):
         flash('Доступ запрещен.', 'error')
         return redirect(url_for('index'))
         
-    return send_from_directory(app.config['UPLOAD_FOLDER'], doc.file_path, as_attachment=True)
+    # Если передан параметр preview=1, открываем файл inline в браузере
+    preview = request.args.get('preview', '0') == '1'
+    as_attachment = not preview
+    
+    return send_from_directory(app.config['UPLOAD_FOLDER'], doc.file_path, as_attachment=as_attachment)
 
 # -------------------------------------------------------------
 # 4. Кабинет врача
@@ -287,13 +291,38 @@ def doctor_cabinet():
         return redirect(url_for('index'))
         
     doctor = current_user.doctor
-    today_date = date.today()
     
-    # Получаем все приемы к этому врачу на сегодня
-    appts = Appointment.query.join(ScheduleSlot).filter(
-        Appointment.doctor_id == doctor.id,
-        ScheduleSlot.date == today_date
-    ).order_by(ScheduleSlot.start_time).all()
+    # Режим просмотра: 'day' (конкретный день) или 'week' (вся неделя)
+    view_type = request.args.get('view', 'day')
+    selected_date_str = request.args.get('date')
+    
+    today = date.today()
+    
+    if selected_date_str:
+        try:
+            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = today
+    else:
+        selected_date = today
+        
+    prev_date = selected_date - timedelta(days=1)
+    next_date = selected_date + timedelta(days=1)
+    week_end = today + timedelta(days=7)
+    
+    if view_type == 'week':
+        # Записи на ближайшие 7 дней (включая сегодня)
+        appts = Appointment.query.join(ScheduleSlot).filter(
+            Appointment.doctor_id == doctor.id,
+            ScheduleSlot.date >= today,
+            ScheduleSlot.date <= week_end
+        ).order_by(ScheduleSlot.date, ScheduleSlot.start_time).all()
+    else:
+        # Записи на конкретный день
+        appts = Appointment.query.join(ScheduleSlot).filter(
+            Appointment.doctor_id == doctor.id,
+            ScheduleSlot.date == selected_date
+        ).order_by(ScheduleSlot.start_time).all()
     
     # Проверяем, передан ли активный приём
     active_appt_id = request.args.get('active_appt_id')
@@ -302,9 +331,19 @@ def doctor_cabinet():
         active_appt = Appointment.query.get(active_appt_id)
         if not active_appt or active_appt.doctor_id != doctor.id:
             flash('Приём не найден или принадлежит другому врачу.', 'error')
-            return redirect(url_for('doctor_cabinet'))
+            return redirect(url_for('doctor_cabinet', view=view_type, date=selected_date_str))
             
-    return render_template('doctor_cabinet.html', appts=appts, active_appt=active_appt)
+    return render_template(
+        'doctor_cabinet.html',
+        appts=appts,
+        active_appt=active_appt,
+        view_type=view_type,
+        selected_date=selected_date,
+        prev_date=prev_date,
+        next_date=next_date,
+        today=today,
+        week_end=week_end
+    )
 
 @app.route('/doctor/save_visit', methods=['POST'])
 @login_required
@@ -467,4 +506,4 @@ if __name__ == '__main__':
     init_directories()
     
     # Запускаем Flask-сервер в режиме разработки
-    app.run(debug=True, port=5000)
+    app.run(host='0.0.0.0', debug=True, port=5000)

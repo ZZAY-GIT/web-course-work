@@ -171,8 +171,7 @@
         serviceSelect.disabled = false;
         serviceSelect.innerHTML = '<option value="" disabled selected>-- Выберите услугу --</option>';
         {% for srv in services %}
-            const srvSpec = "{% if 'терап' in srv.title.lower() or 'анализ' in srv.title.lower() %}Терапевт{% else %}Кардиолог{% endif %}";
-            if (srvSpec === spec) {
+            if ("{% if 'терап' in srv.title.lower() or 'анализ' in srv.title.lower() %}Терапевт{% else %}Кардиолог{% endif %}" === spec) {
                 const opt = document.createElement('option');
                 opt.value = "{{ srv.id }}";
                 opt.textContent = "{{ srv.title }} ({{ srv.price | int }} ₽)";
