@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Личный кабинет врача{% endblock %}
+
+{% block content %}
+<div class="row py-3">
+    <div class="col-12 text-center mb-4">
+        <h1 class="h2 text-main font-semibold">Личный кабинет врача — Расписание и ведение приёма</h1>
+        <p class="text-muted">Просматривайте расписание на день и фиксируйте результаты осмотров в электронных медицинских картах.</p>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- 1. Мое расписание на сегодня (Левая колонка) -->
+        <div class="col-md-5">
+            <div class="card p-4 h-100 shadow-sm border-0">
+                <h2 class="h5 font-semibold text-main border-bottom pb-2 mb-3">
+                    <i class="bi bi-calendar-check-fill text-primary me-2"></i>Мое расписание на сегодня
+                </h2>
+                
+                {% if appts %}
+                    <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+                        {% for appt in appts %}
+                            <div class="list-group-item p-3 border-light rounded mb-2 bg-light d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="font-semibold text-main">
+                                        <i class="bi bi-clock me-1"></i>{{ appt.slot.start_time.strftime('%H:%M') }} - {{ appt.patient.full_name }}
+                                    </div>
+                                    <div class="text-muted small ms-3">Услуга: {{ appt.service.title }}</div>
+                                    <div class="text-muted small ms-3">
+                                        Статус: 
+                                        {% if appt.status == 'completed' %}
+                                            <span class="badge badge-completed">Принят</span>
+                                        {% elif active_appt and active_appt.id == appt.id %}
+                                            <span class="badge bg-warning text-dark">В процессе</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary text-white">Ожидание</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% if appt.status != 'completed' %}
+                                    <a href="{{ url_for('doctor_cabinet', active_appt_id=appt.id) }}" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-folder-plus me-1"></i>Вести приём
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="p-4 bg-light rounded border text-center text-muted">
+                        <i class="bi bi-calendar-x fs-2 text-muted d-block mb-2"></i>
+                        На сегодня записей нет.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 2. Форма активного приёма (Правая колонка) -->
+        <div class="col-md-7">
+            <div class="card p-4 h-100 shadow-sm border-0">
+                {% if active_appt %}
+                    <h2 class="h5 font-semibold text-main border-bottom pb-2 mb-3">
+                        <i class="bi bi-heart-pulse text-danger me-2"></i>Форма активного приёма: {{ active_appt.patient.full_name }}
+                    </h2>
+                    
+                    <form action="{{ url_for('save_visit') }}" method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="appointment_id" value="{{ active_appt.id }}">
+                        
+                        <div class="mb-3">
+                            <label for="complaints" class="form-label small text-muted">Жалобы и анамнез пациента</label>
+                            <textarea class="form-control" id="complaints" name="complaints" rows="3" required placeholder="Опишите симптомы, жалобы и историю развития заболевания..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="diagnosis" class="form-label small text-muted">Первичный диагноз</label>
+                            <input type="text" class="form-control" id="diagnosis" name="diagnosis" required placeholder="Введите основной медицинский диагноз">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="recommendations" class="form-label small text-muted">Назначения и рецепты</label>
+                            <textarea class="form-control" id="recommendations" name="recommendations" rows="3" required placeholder="Укажите режим лечения, лекарственные препараты, дозировку и процедуры..."></textarea>
+                        </div>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-sm-6">
+                                <label for="document_file" class="form-label small text-muted">Прикрепить медицинский файл (PDF/Изображение)</label>
+                                <input class="form-control" type="file" id="document_file" name="document_file">
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="file_type" class="form-label small text-muted">Тип документа</label>
+                                <select class="form-select" id="file_type" name="file_type">
+                                    <option value="Заключение врача">Заключение врача</option>
+                                    <option value="Результаты анализов">Результаты анализов</option>
+                                    <option value="Рентгеновский снимок / МРТ">Снимок / МРТ</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end border-top pt-3">
+                            <a href="{{ url_for('doctor_cabinet') }}" class="btn btn-outline-secondary btn-sm me-md-2">
+                                <i class="bi bi-x-circle me-1"></i>Отмена
+                            </a>
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="bi bi-check-circle me-1"></i>Сохранить и завершить приём
+                            </button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="h-100 d-flex flex-column justify-content-center align-items-center py-5 text-muted">
+                        <i class="bi bi-person-workspace text-muted display-3 mb-3 d-block"></i>
+                        <h2 class="h5 font-semibold">Окно ведения приема готово к работе</h2>
+                        <p class="small text-center px-4">Выберите пациента в списке расписания слева, чтобы начать оформление медицинской карты посещения.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Системный подвал (из макета 5) -->
+    <div class="col-12">
+        <div class="text-center p-3 bg-white rounded border text-muted small shadow-sm">
+            <i class="bi bi-shield-fill-check text-success me-1"></i>
+            <strong>Подвал:</strong> Система электронных медицинских карт частной клиники. Доступ защищен шифрованием. Все сессии врачей логируются. &copy; 2026
+        </div>
+    </div>
+</div>
+{% endblock %}

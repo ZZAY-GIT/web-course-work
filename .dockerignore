@@ -1,0 +1,26 @@
+# Игнорировать отчет и документацию
+report/
+*.pdf
+*.tex
+*.sty
+*.bst
+*.bib
+Makefile
+
+# Игнорировать локальные виртуальные окружения и кэш
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git
+.gitignore
+.dockerignore
+
+# Игнорировать локальную базу данных и логи
+instance/
+*.db
+*.log
+clinic_app/instance/
+clinic_app/clinic.db

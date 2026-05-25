@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Вход и Регистрация{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-lg-10">
+        <div class="text-center mb-5">
+            <h1 class="h2 text-main font-semibold">Страница авторизации и регистрации</h1>
+            <p class="text-muted">Войдите в личный кабинет или зарегистрируйтесь для онлайн-записи на приём.</p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            <!-- 1. Login Form (Left side) -->
+            <div class="col-md-5">
+                <div class="card h-100 p-4 shadow-sm border-0">
+                    <div class="mb-4">
+                        <h2 class="h5 font-semibold text-main border-bottom pb-2">
+                            <i class="bi bi-box-arrow-in-right text-primary me-2"></i>Форма входа (Авторизация)
+                        </h2>
+                    </div>
+                    <form action="{{ url_for('login_route') }}" method="POST">
+                        <div class="mb-3">
+                            <label for="login_email" class="form-label small text-muted">Адрес электронной почты (Email)</label>
+                            <input type="email" class="form-control" id="login_email" name="email" required placeholder="name@example.com">
+                        </div>
+                        <div class="mb-4">
+                            <label for="login_password" class="form-label small text-muted">Пароль</label>
+                            <input type="password" class="form-control" id="login_password" name="password" required placeholder="Введите Ваш пароль">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Войти в кабинет
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 2. Registration Form (Right side) -->
+            <div class="col-md-6">
+                <div class="card p-4 shadow-sm border-0">
+                    <div class="mb-4">
+                        <h2 class="h5 font-semibold text-main border-bottom pb-2">
+                            <i class="bi bi-person-plus-fill text-primary me-2"></i>Форма регистрации пациента
+                        </h2>
+                    </div>
+                    <form action="{{ url_for('register_route') }}" method="POST">
+                        <div class="mb-3">
+                            <label for="reg_name" class="form-label small text-muted">ФИО пациента</label>
+                            <input type="text" class="form-control" id="reg_name" name="full_name" required placeholder="Иванов Иван Иванович">
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="reg_date" class="form-label small text-muted">Дата рождения</label>
+                                <input type="date" class="form-control" id="reg_date" name="birth_date" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="reg_phone" class="form-label small text-muted">Номер телефона</label>
+                                <input type="tel" class="form-control" id="reg_phone" name="phone" required placeholder="+7 (999) 123-45-67">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg_email" class="form-label small text-muted">Адрес электронной почты (Email)</label>
+                            <input type="email" class="form-control" id="reg_email" name="email" required placeholder="patient@example.com">
+                        </div>
+                        <div class="mb-4">
+                            <label for="reg_password" class="form-label small text-muted">Придумайте пароль</label>
+                            <input type="password" class="form-control" id="reg_password" name="password" required placeholder="Минимум 6 символов">
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary w-100 shadow-sm">
+                            <i class="bi bi-person-check me-1"></i>Зарегистрироваться
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Privacy disclaimer footer (from mockup 2) -->
+        <div class="text-center mt-5 p-3 bg-white rounded border text-muted small shadow-sm">
+            <i class="bi bi-shield-lock-fill text-success me-1"></i>
+            <strong>Подвал:</strong> Защита персональных данных пациентов согласно Федеральному закону № 152-ФЗ. Все данные зашифрованы и защищены. &copy; 2026
+        </div>
+    </div>
+</div>
+{% endblock %}

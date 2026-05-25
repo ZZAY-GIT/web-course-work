@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}Личный кабинет пациента{% endblock %}
+
+{% block content %}
+<div class="row py-3">
+    <div class="col-12 text-center mb-4">
+        <h1 class="h2 text-main font-semibold">Главный экран личного кабинета</h1>
+        <p class="text-muted">Управление Вашим здоровьем, расписанием приёмов и медицинской картой.</p>
+    </div>
+
+    <!-- Верхний ряд: Ближайшая запись и Быстрые действия -->
+    <div class="row g-4 mb-4">
+        <!-- Ближайшая запись (Левая колонка) -->
+        <div class="col-md-6">
+            <div class="card p-4 h-100 shadow-sm border-0">
+                <h2 class="h5 font-semibold text-main border-bottom pb-2 mb-3">
+                    <i class="bi bi-calendar-event-fill text-primary me-2"></i>Ближайшая запись
+                </h2>
+                {% if upcoming_appt %}
+                    <div class="p-3 bg-light rounded border">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h3 class="h6 mb-1 font-semibold text-main">{{ upcoming_appt.service.title }}</h3>
+                                <p class="text-muted mb-1"><i class="bi bi-person me-1"></i>Врач: <strong>{{ upcoming_appt.doctor.full_name }}</strong> ({{ upcoming_appt.doctor.specialization }})</p>
+                                <p class="text-muted mb-1"><i class="bi bi-clock me-1"></i>Время: <strong>{{ upcoming_appt.slot.date.strftime('%d.%m.%Y') }} в {{ upcoming_appt.slot.start_time.strftime('%H:%M') }}</strong></p>
+                                <p class="text-muted mb-0"><i class="bi bi-door-open me-1"></i>Кабинет: <strong>{{ upcoming_appt.doctor.cabinet }}</strong></p>
+                            </div>
+                            <span class="badge bg-primary text-white">Подтверждена</span>
+                        </div>
+                        <div class="text-end mt-3 border-top pt-2">
+                            <form action="{{ url_for('cancel_booking', appt_id=upcoming_appt.id) }}" method="POST" onsubmit="return confirm('Вы действительно хотите отменить запись на приём?');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-calendar-x me-1"></i>Отменить запись
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="p-4 bg-light rounded border text-center text-muted">
+                        <i class="bi bi-calendar-minus fs-2 text-muted d-block mb-2"></i>
+                        У Вас нет предстоящих записей на приём.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Быстрая запись (Правая колонка) -->
+        <div class="col-md-6">
+            <div class="card p-4 h-100 shadow-sm border-0 text-center d-flex flex-column justify-content-center align-items-center">
+                <div class="mb-3">
+                    <h2 class="h5 font-semibold text-main border-bottom pb-2 mb-3 text-start w-100">
+                        <i class="bi bi-lightning-charge-fill text-warning me-2"></i>Быстрая запись
+                    </h2>
+                </div>
+                <div class="py-3">
+                    <i class="bi bi-calendar-plus text-primary display-4 mb-3 d-block"></i>
+                    <p class="text-muted mb-4 small">Выберите специалиста, услугу и запишитесь на прием за пару кликов.</p>
+                    <a href="{{ url_for('booking_page') }}" class="btn btn-primary btn-lg shadow-sm">
+                        <i class="bi bi-plus-circle me-1"></i>Записаться к врачу
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Нижний ряд: История посещений и Медицинская карта -->
+    <div class="row g-4 mb-4">
+        <!-- История посещений (Левая колонка) -->
+        <div class="col-md-6">
+            <div class="card p-4 h-100 shadow-sm border-0">
+                <h2 class="h5 font-semibold text-main border-bottom pb-2 mb-3">
+                    <i class="bi bi-clock-history text-primary me-2"></i>История посещений
+                </h2>
+                {% if past_appts %}
+                    <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Врач / Услуга</th>
+                                    <th>Диагноз и рекомендации</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appt in past_appts %}
+                                <tr>
+                                    <td class="small font-medium text-nowrap">{{ appt.slot.date.strftime('%d.%m.%Y') }}</td>
+                                    <td>
+                                        <div class="font-semibold text-main small">{{ appt.doctor.full_name.split()[0] }} {{ appt.doctor.full_name.split()[1][0] }}.{{ appt.doctor.full_name.split()[2][0] }}.</div>
+                                        <div class="text-muted small">{{ appt.service.title }}</div>
+                                    </td>
+                                    <td>
+                                        {% if appt.visit %}
+                                            <div class="text-main small font-medium mb-1">{{ appt.visit.diagnosis }}</div>
+                                            <div class="text-muted small" style="white-space: pre-line;">{{ appt.visit.recommendations }}</div>
+                                        {% else %}
+                                            <span class="text-muted small">Заключение не оформлено</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="p-4 bg-light rounded border text-center text-muted">
+                        <i class="bi bi-journal-x fs-2 text-muted d-block mb-2"></i>
+                        История визитов пока пуста.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Электронная медицинская карта (Правая колонка) -->
+        <div class="col-md-6">
+            <div class="card p-4 h-100 shadow-sm border-0">
+                <h2 class="h5 font-semibold text-main border-bottom pb-2 mb-3">
+                    <i class="bi bi-file-medical-fill text-primary me-2"></i>Медицинская карта
+                </h2>
+                {% if record %}
+                    <div class="p-3 bg-light rounded border mb-3">
+                        <div class="row g-2 small">
+                            <div class="col-6"><strong>Номер карты:</strong></div>
+                            <div class="col-6 text-end text-main"><strong>{{ record.card_number }}</strong></div>
+                            
+                            <div class="col-6"><strong>Группа крови:</strong></div>
+                            <div class="col-6 text-end text-main">{{ record.blood_type or 'Не указана' }}</div>
+                            
+                            <div class="col-6"><strong>Резус-фактор:</strong></div>
+                            <div class="col-6 text-end text-main">{{ record.rh_factor or 'Не указан' }}</div>
+                            
+                            <div class="col-12 border-top my-2"></div>
+                            
+                            <div class="col-12"><strong>Аллергические реакции:</strong></div>
+                            <div class="col-12 text-muted mt-1">{{ record.allergies or 'Не выявлено' }}</div>
+                            
+                            <div class="col-12 mt-2"><strong>Хронические заболевания:</strong></div>
+                            <div class="col-12 text-muted mt-1">{{ record.chronic_diseases or 'Не зарегистрировано' }}</div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="h6 font-semibold text-main mb-2">Прикрепленные документы:</h3>
+                    {% if documents %}
+                        <div class="list-group shadow-sm rounded">
+                            {% for doc in documents %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center p-2 border-light">
+                                <span class="small text-main"><i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>{{ doc.file_type }}</span>
+                                <a href="{{ url_for('download_document', doc_id=doc.id) }}" class="btn btn-outline-primary btn-sm py-0 px-2" style="font-size:0.75rem;">
+                                    <i class="bi bi-download me-1"></i>Скачать
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="p-2 bg-light rounded border text-center text-muted small">
+                            Прикрепленные медицинские документы отсутствуют.
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="p-4 bg-light rounded border text-center text-muted">
+                        Медицинская карта не заведена.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомления и сообщения системы (Подвал личного кабинета) -->
+    <div class="col-12">
+        <div class="alert alert-info border-0 shadow-sm p-4 rounded mb-0" role="alert">
+            <h4 class="alert-heading h6 font-semibold text-main mb-2">
+                <i class="bi bi-bell-fill text-primary me-2"></i>Уведомления и сообщения системы:
+            </h4>
+            <ul class="mb-0 small text-muted ps-3">
+                <li class="mb-1"><strong>Важно:</strong> Пожалуйста, приходите за 10 минут до начала приёма, чтобы оформить документы в регистратуре.</li>
+                <li>В клинике действует масочный режим в связи с сезонными заболеваниями. Берегите себя и окружающих.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

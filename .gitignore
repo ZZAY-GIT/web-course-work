@@ -1,0 +1,50 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# SQLite Databases & Local instances
+instance/
+*.db
+clinic_app/instance/
+clinic_app/clinic.db
+
+# Flask and OS logs
+*.log
+.pytest_cache/
+
+# IDE files
+.vscode/
+.idea/
+
+# LaTeX build outputs
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.dvi
+*.lof
+*.lot
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.synctex.gz
+report/*.fls
+report/*.fdb_latexmk
+report/*.dvi
+report/*.lof
+report/*.lot

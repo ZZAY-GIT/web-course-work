@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Панель администратора{% endblock %}
+
+{% block content %}
+<div class="row py-3">
+    <div class="col-12 text-center mb-4">
+        <h1 class="h2 text-main font-semibold">Панель управления клиникой</h1>
+        <p class="text-muted">Администрирование врачей, медицинских услуг, расписания приёмов и учётных записей пользователей.</p>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- 1. Боковое меню (Левая колонка) -->
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm border-0">
+                <div class="card-header bg-white border-0 p-0 mb-3">
+                    <h2 class="h6 font-bold text-muted text-uppercase tracking-wider">Навигация</h2>
+                </div>
+                <div class="list-group list-group-flush shadow-sm rounded">
+                    <a href="#" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-people-fill me-2 text-primary"></i>Управление врачами</a>
+                    <a href="#" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-file-earmark-medical me-2 text-primary"></i>Управление услугами</a>
+                    <a href="{{ url_for('admin_panel') }}" class="list-group-item list-group-item-action py-2 font-medium text-primary active bg-primary-light border-0"><i class="bi bi-calendar-range-fill me-2"></i>Расписание клиники</a>
+                    <a href="#" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-person-bounding-box me-2 text-primary"></i>База пациентов</a>
+                    <a href="#" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-journal-text me-2 text-primary"></i>Управление записями</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Основная рабочая область (Правая колонка) -->
+        <div class="col-md-9">
+            <!-- Блок 2.1: Добавление нового слота расписания -->
+            <div class="card p-4 shadow-sm border-0 mb-4">
+                <h2 class="h5 font-semibold text-main border-bottom pb-2 mb-3">
+                    <i class="bi bi-calendar-plus-fill text-primary me-2"></i>Добавить новые слоты в расписание
+                </h2>
+                
+                <form action="{{ url_for('add_slot') }}" method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="new_doc" class="form-label small text-muted">Выберите врача</label>
+                            <select class="form-select" id="new_doc" name="doctor_id" required>
+                                {% for doc in doctors %}
+                                    <option value="{{ doc.id }}">{{ doc.full_name }} ({{ doc.specialization }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="new_date" class="form-label small text-muted">Дата</label>
+                            <input type="date" class="form-control" id="new_date" name="date" required min="{{ today }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="new_time" class="form-label small text-muted">Время начала</label>
+                            <input type="time" class="form-control" id="new_time" name="start_time" required>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                                <i class="bi bi-plus-circle me-1"></i>Создать слот
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Блок 2.2: Сетка слотов расписания на день -->
+            <div class="card p-4 shadow-sm border-0">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                    <h2 class="h5 font-semibold text-main mb-0">
+                        <i class="bi bi-table text-primary me-2"></i>Раздел: Управление расписанием врачей
+                    </h2>
+                </div>
+
+                <!-- Таблица расписания -->
+                {% if slots %}
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Врач</th>
+                                    <th>Время</th>
+                                    <th>Статус</th>
+                                    <th class="text-end">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for slot in slots %}
+                                <tr>
+                                    <td class="small font-medium">{{ slot.date.strftime('%d.%m.%Y') }}</td>
+                                    <td>
+                                        <div class="font-semibold text-main small">{{ slot.doctor.full_name }}</div>
+                                        <div class="text-muted small">{{ slot.doctor.specialization }}</div>
+                                    </td>
+                                    <td class="small font-semibold">{{ slot.start_time.strftime('%H:%M') }} - {{ slot.end_time.strftime('%H:%M') }}</td>
+                                    <td>
+                                        {% if slot.status == 'free' %}
+                                            <span class="badge badge-free px-2 py-1 rounded-pill small">Свободен</span>
+                                        {% else %}
+                                            <span class="badge badge-booked px-2 py-1 rounded-pill small">Занят</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <form action="{{ url_for('delete_slot', slot_id=slot.id) }}" method="POST" onsubmit="return confirm('Вы действительно хотите удалить этот временной слот из расписания?');" style="display:inline;">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 0.8rem;" {% if slot.status != 'free' %}disabled title="Нельзя удалить занятый слот"{% endif %}>
+                                                <i class="bi bi-trash-fill"></i> Удалить
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="p-4 bg-light rounded border text-center text-muted">
+                        Слоты расписания отсутствуют. Вы можете добавить новые слоты с помощью формы выше.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Административный подвал (из макета 6) -->
+    <div class="col-12">
+        <div class="text-center p-3 bg-white rounded border text-muted small shadow-sm">
+            <i class="bi bi-shield-fill-exclamation text-warning me-1"></i>
+            <strong>Подвал:</strong> Административный интерфейс управления ресурсами клиники. Сессия администратора активна. &copy; 2026
+        </div>
+    </div>
+</div>
+{% endblock %}

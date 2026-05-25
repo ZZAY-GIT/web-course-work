@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+
+{% block title %}Онлайн-запись на прием{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-lg-10">
+        <div class="text-center mb-5">
+            <h1 class="h2 text-main font-semibold">Форма онлайн-записи на приём</h1>
+            <p class="text-muted">Заполните поля ниже, чтобы быстро и удобно записаться к врачу без звонка в регистратуру.</p>
+        </div>
+
+        <form action="{{ url_for('confirm_booking') }}" method="POST" id="bookingForm">
+            <div class="row g-4 mb-4">
+                <!-- Шаг 1: Выбор направления и врача -->
+                <div class="col-md-6">
+                    <div class="card p-4 h-100 shadow-sm border-0">
+                        <h2 class="h5 font-semibold text-main border-bottom pb-2 mb-3">
+                            <span class="badge bg-primary text-white me-2">1</span>Шаг 1: Направление и врач
+                        </h2>
+                        
+                        <div class="mb-3">
+                            <label for="specialty" class="form-label small text-muted">Выберите специальность врача</label>
+                            <select class="form-select" id="specialty" name="specialty" required>
+                                <option value="" disabled selected>-- Выберите направление --</option>
+                                <option value="Терапевт">Терапия</option>
+                                <option value="Кардиолог">Кардиология</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <label for="doctor" class="form-label small text-muted">Выберите конкретного врача</label>
+                            <select class="form-select" id="doctor" name="doctor_id" required disabled>
+                                <option value="" disabled selected>-- Сначала выберите направление --</option>
+                                {% for doc in doctors %}
+                                    <option value="{{ doc.id }}" data-spec="{{ doc.specialization }}" data-name="{{ doc.full_name }}">{{ doc.full_name }} ({{ doc.cabinet }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Шаг 2: Выбор услуги -->
+                <div class="col-md-6">
+                    <div class="card p-4 h-100 shadow-sm border-0">
+                        <h2 class="h5 font-semibold text-main border-bottom pb-2 mb-3">
+                            <span class="badge bg-primary text-white me-2">2</span>Шаг 2: Выберите услугу
+                        </h2>
+                        
+                        <div class="mb-3">
+                            <label for="service" class="form-label small text-muted">Выберите медицинскую услугу</label>
+                            <select class="form-select" id="service" name="service_id" required disabled>
+                                <option value="" disabled selected>-- Сначала выберите направление --</option>
+                                {% for srv in services %}
+                                    <option value="{{ srv.id }}" data-spec="{% if 'терап' in srv.title.lower() or 'анализ' in srv.title.lower() %}Терапевт{% else %}Кардиолог{% endif %}" data-title="{{ srv.title }}" data-price="{{ srv.price | int }}" data-dur="{{ srv.duration_minutes }}">
+                                        {{ srv.title }} ({{ srv.price | int }} ₽)
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="bg-light p-3 rounded border text-muted small" id="serviceDetails" style="display:none;">
+                            <p class="mb-1"><strong>Длительность:</strong> <span id="lblDuration">30</span> мин.</p>
+                            <p class="mb-0"><strong>Стоимость:</strong> <span id="lblPrice">1500</span> руб.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Шаг 3: Выбор даты и свободного времени -->
+            <div class="card p-4 shadow-sm border-0 mb-4">
+                <h2 class="h5 font-semibold text-main border-bottom pb-2 mb-3">
+                    <span class="badge bg-primary text-white me-2">3</span>Шаг 3: Выберите дату и свободное время
+                </h2>
+                
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <label for="dateSelect" class="form-label small text-muted">Выберите дату посещения</label>
+                        <input type="date" class="form-control" id="dateSelect" name="date" required disabled min="{{ today }}">
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <label class="form-label small text-muted d-block">Доступные временные интервалы (слоты)</label>
+                        
+                        <!-- Grid of slot buttons -->
+                        <div id="slotsPlaceholder" class="p-3 bg-light rounded border text-center text-muted">
+                            Для отображения свободного времени выберите врача и дату.
+                        </div>
+                        
+                        <div id="slotsGrid" class="row row-cols-4 g-2" style="display:none;">
+                            <!-- Dynamically generated buttons go here -->
+                        </div>
+                        
+                        <!-- Hidden input to store chosen slot ID -->
+                        <input type="hidden" id="slotIdInput" name="slot_id" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Подтверждение записи (Резюме) -->
+            <div class="card p-4 shadow-sm border-primary border-1 bg-primary-light mb-4" id="confirmCard" style="display:none;">
+                <h2 class="h5 font-semibold text-main border-bottom pb-2 mb-3">Резюме записи</h2>
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <p class="mb-1 text-main"><strong>Врач:</strong> <span id="resDoctor">-</span></p>
+                        <p class="mb-1 text-main"><strong>Услуга:</strong> <span id="resService">-</span></p>
+                        <p class="mb-0 text-main"><strong>Дата и время:</strong> <span id="resDateTime">-</span></p>
+                    </div>
+                    <div class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm" id="btnSubmit" disabled>
+                            <i class="bi bi-calendar-check me-2"></i>Подтвердить запись
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Подвал службы поддержки -->
+        <div class="text-center p-3 bg-white rounded border text-muted small shadow-sm">
+            <i class="bi bi-headset text-primary me-1"></i>
+            <strong>Подвал:</strong> Возникли трудности с записью? Позвоните в нашу службу поддержки: <strong>+7 (495) 123-45-67</strong> | &copy; 2026
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Embedded JSON of slots from backend
+    const slotsData = {{ slots_json | safe }};
+    
+    const specialtySelect = document.getElementById('specialty');
+    const doctorSelect = document.getElementById('doctor');
+    const serviceSelect = document.getElementById('service');
+    const dateSelect = document.getElementById('dateSelect');
+    const slotsPlaceholder = document.getElementById('slotsPlaceholder');
+    const slotsGrid = document.getElementById('slotsGrid');
+    const slotIdInput = document.getElementById('slotIdInput');
+    const serviceDetails = document.getElementById('serviceDetails');
+    const lblDuration = document.getElementById('lblDuration');
+    const lblPrice = document.getElementById('lblPrice');
+    const confirmCard = document.getElementById('confirmCard');
+    const resDoctor = document.getElementById('resDoctor');
+    const resService = document.getElementById('resService');
+    const resDateTime = document.getElementById('resDateTime');
+    const btnSubmit = document.getElementById('btnSubmit');
+
+    // 1. Specialty change -> filter doctors & services
+    specialtySelect.addEventListener('change', function() {
+        const spec = this.value;
+        
+        // Filter doctors dropdown
+        doctorSelect.disabled = false;
+        doctorSelect.innerHTML = '<option value="" disabled selected>-- Выберите врача --</option>';
+        Array.from(doctorSelect.options).forEach(opt => {
+            // Restore hidden options
+        });
+        
+        {% for doc in doctors %}
+            if ("{{ doc.specialization }}" === spec) {
+                const opt = document.createElement('option');
+                opt.value = "{{ doc.id }}";
+                opt.textContent = "{{ doc.full_name }} ({{ doc.cabinet }})";
+                opt.dataset.name = "{{ doc.full_name }}";
+                opt.dataset.spec = "{{ doc.specialization }}";
+                doctorSelect.appendChild(opt);
+            }
+        {% endfor %}
+
+        // Filter services dropdown
+        serviceSelect.disabled = false;
+        serviceSelect.innerHTML = '<option value="" disabled selected>-- Выберите услугу --</option>';
+        {% for srv in services %}
+            const srvSpec = "{% if 'терап' in srv.title.lower() or 'анализ' in srv.title.lower() %}Терапевт{% else %}Кардиолог{% endif %}";
+            if (srvSpec === spec) {
+                const opt = document.createElement('option');
+                opt.value = "{{ srv.id }}";
+                opt.textContent = "{{ srv.title }} ({{ srv.price | int }} ₽)";
+                opt.dataset.title = "{{ srv.title }}";
+                opt.dataset.price = "{{ srv.price | int }}";
+                opt.dataset.dur = "{{ srv.duration_minutes }}";
+                serviceSelect.appendChild(opt);
+            }
+        {% endfor %}
+        
+        // Reset subsequent selections
+        dateSelect.disabled = true;
+        dateSelect.value = '';
+        resetSlots();
+    });
+
+    // 2. Doctor / Service change -> enable date selector
+    doctorSelect.addEventListener('change', checkStep2);
+    serviceSelect.addEventListener('change', function() {
+        // Show service details
+        const opt = this.options[this.selectedIndex];
+        lblDuration.textContent = opt.dataset.dur;
+        lblPrice.textContent = opt.dataset.price;
+        serviceDetails.style.display = 'block';
+        
+        checkStep2();
+    });
+
+    function checkStep2() {
+        if (doctorSelect.value && serviceSelect.value) {
+            dateSelect.disabled = false;
+            // Clear slot and grid
+            resetSlots();
+            if (dateSelect.value) {
+                renderSlots();
+            }
+        }
+    }
+
+    // 3. Date selection -> Render slot buttons from slotsData
+    dateSelect.addEventListener('change', renderSlots);
+
+    function resetSlots() {
+        slotIdInput.value = '';
+        slotsPlaceholder.style.display = 'block';
+        slotsGrid.style.display = 'none';
+        confirmCard.style.display = 'none';
+        btnSubmit.disabled = true;
+    }
+
+    function renderSlots() {
+        const docId = doctorSelect.value;
+        const selectedDate = dateSelect.value;
+        
+        if (!docId || !selectedDate) return;
+        
+        // Find matching slots
+        const slots = slotsData.filter(s => s.doctor_id == docId && s.date === selectedDate);
+        
+        slotsGrid.innerHTML = '';
+        
+        if (slots.length === 0) {
+            slotsPlaceholder.textContent = 'Нет доступных свободных слотов на выбранную дату.';
+            slotsPlaceholder.style.display = 'block';
+            slotsGrid.style.display = 'none';
+            return;
+        }
+        
+        slotsPlaceholder.style.display = 'none';
+        slotsGrid.style.display = 'flex';
+        
+        slots.forEach(slot => {
+            const col = document.createElement('div');
+            col.className = 'col';
+            
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn w-100 shadow-sm ' + (slot.status === 'free' ? 'btn-outline-primary' : 'btn-light text-muted border-0');
+            btn.textContent = slot.time;
+            
+            if (slot.status !== 'free') {
+                btn.disabled = true;
+                btn.title = 'Занят';
+            } else {
+                btn.addEventListener('click', function() {
+                    // Unselect others
+                    document.querySelectorAll('#slotsGrid .btn').forEach(b => {
+                        if (b.classList.contains('btn-primary')) {
+                            b.classList.remove('btn-primary');
+                            b.classList.add('btn-outline-primary');
+                        }
+                    });
+                    
+                    // Select this one
+                    btn.classList.remove('btn-outline-primary');
+                    btn.classList.add('btn-primary');
+                    
+                    // Store slot id
+                    slotIdInput.value = slot.id;
+                    
+                    // Show summary
+                    updateSummary(slot.time);
+                });
+            }
+            
+            col.appendChild(btn);
+            slotsGrid.appendChild(col);
+        });
+    }
+
+    function updateSummary(slotTime) {
+        const docOpt = doctorSelect.options[doctorSelect.selectedIndex];
+        const srvOpt = serviceSelect.options[serviceSelect.selectedIndex];
+        
+        const formattedDate = new Date(dateSelect.value).toLocaleDateString('ru-RU');
+        
+        resDoctor.textContent = docOpt.dataset.name;
+        resService.textContent = srvOpt.dataset.title;
+        resDateTime.textContent = formattedDate + ' в ' + slotTime;
+        
+        confirmCard.style.display = 'block';
+        btnSubmit.disabled = false;
+    }
+</script>
+{% endblock %}
