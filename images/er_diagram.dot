@@ -9,7 +9,7 @@ digraph G {
   services [label="{services|id PK\ltitle\lprice\lduration\l}"];
   slots [label="{schedule_slots|id PK\ldoctor_id FK\ldate\lstart_time\lend_time\lstatus\l}"];
   appointments [label="{appointments|id PK\lpatient_id FK\ldoctor_id FK\lservice_id FK\lslot_id FK\lstatus\l}"];
-  records [label="{medical_records|id PK\lpatient_id FK\lcreated_at\lupdated_at\l}"];
+  records [label="{medical_records|id PK\lpatient_id FK\lcard_number\lblood_type\lrh_factor\lallergies\lchronic_diseases\lcreated_at\lupdated_at\l}"];
   visits [label="{visits|id PK\lrecord_id FK\lappointment_id FK\ldiagnosis\lrecommendations\l}"];
   documents [label="{documents|id PK\lpatient_id FK\lvisit_id FK\lfile_path\lfile_type\l}"];
 

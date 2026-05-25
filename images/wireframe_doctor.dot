@@ -1,0 +1,19 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", nodesep=0.35, ranksep=0.45, fontname="DejaVu Sans"];
+  node [shape=box, fontname="DejaVu Sans", fontsize=11, style="rounded,filled", fillcolor="#f8f8f8"];
+  edge [style=invis];
+
+  header [label="Шапка: Логотип | Врач: Петров П.П. (Терапевт) | [Выйти]", width=7.5];
+  title [label="Личный кабинет врача — Расписание и ведение приёма", width=7.5];
+  col1 [label="Мое расписание на сегодня\n09:00 - Амплеенков Д.О. (Терапия) [Принят]\n09:30 - Сидоров С.С. (Осмотр) [В процессе]\n10:30 - Козлов К.К. (Консультация) [Ожидание]\n11:00 - Свободный слот", width=3.6];
+  col2 [label="Форма активного приёма: Сидоров С.С.\n[Текстовая область: Жалобы и анамнез]\n[Текстовое поле: Первичный диагноз]\n[Текстовая область: Назначения и рецепты]\n[Кнопка: Добавить документ]  [Кнопка: Завершить приём]", width=3.6];
+  footer [label="Подвал: Система электронных медицинских карт частной клиники", width=7.5];
+
+  header -> title;
+  title -> col1;
+  title -> col2;
+  col1 -> footer;
+  col2 -> footer;
+
+  {rank=same; col1; col2;}
+}

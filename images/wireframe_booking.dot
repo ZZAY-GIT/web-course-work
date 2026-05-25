@@ -1,0 +1,23 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", nodesep=0.35, ranksep=0.45, fontname="DejaVu Sans"];
+  node [shape=box, fontname="DejaVu Sans", fontsize=11, style="rounded,filled", fillcolor="#f8f8f8"];
+  edge [style=invis];
+
+  header [label="Шапка: Логотип | Пациент: Амплеенков Д.О. | [Выйти]", width=7.5];
+  title [label="Форма онлайн-записи на приём", width=7.5];
+  step1 [label="Шаг 1: Направление и врач\n[Выбрать специальность]\n[Выбрать врача]", width=3.6];
+  step2 [label="Шаг 2: Выберите услугу\n[Выбрать услугу]\nДлительность: 30 мин., Цена: 1500 руб.", width=3.6];
+  step3 [label="Шаг 3: Выберите дату и свободное время\n[Интерактивный календарь]\n[Слоты: 09:00, 09:30, 10:00 (занят), 10:30]", width=7.5];
+  confirm [label="Подтверждение записи\nВыбран врач: Иванов И.И., услуга: Прием терапевта\nДата и время: 28.05.2026 в 09:30\n[Кнопка: Подтвердить запись]", width=7.5];
+  footer [label="Подвал: Служба поддержки клиники | © 2026", width=7.5];
+
+  header -> title;
+  title -> step1;
+  title -> step2;
+  step1 -> step3;
+  step2 -> step3;
+  step3 -> confirm;
+  confirm -> footer;
+
+  {rank=same; step1; step2;}
+}

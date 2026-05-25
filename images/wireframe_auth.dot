@@ -1,0 +1,19 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", nodesep=0.35, ranksep=0.45, fontname="DejaVu Sans"];
+  node [shape=box, fontname="DejaVu Sans", fontsize=11, style="rounded,filled", fillcolor="#f8f8f8"];
+  edge [style=invis];
+
+  header [label="Шапка: Логотип | [На главную страницу клиники]", width=7.5];
+  title [label="Страница авторизации и регистрации", width=7.5];
+  col1 [label="Форма входа (Авторизация)\n[Поле ввода: Email]\n[Поле ввода: Пароль]\n[Кнопка: Войти в кабинет]", width=3.6];
+  col2 [label="Форма регистрации пациента\n[Поле ввода: ФИО пациента]\n[Поле ввода: Дата рождения]\n[Поле ввода: Номер телефона]\n[Поле ввода: Email]\n[Поле ввода: Пароль]\n[Кнопка: Зарегистрироваться]", width=3.6];
+  footer [label="Подвал: Защита персональных данных пациентов согласно ФЗ-152 | © 2026", width=7.5];
+
+  header -> title;
+  title -> col1;
+  title -> col2;
+  col1 -> footer;
+  col2 -> footer;
+
+  {rank=same; col1; col2;}
+}

@@ -1,0 +1,24 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", nodesep=0.35, ranksep=0.45, fontname="DejaVu Sans"];
+  node [shape=box, fontname="DejaVu Sans", fontsize=11, style="rounded,filled", fillcolor="#f8f8f8"];
+  edge [style=invis];
+
+  header [label="Шапка: Логотип | О клинике | Услуги | Специалисты | [Войти]", width=7.5];
+  hero [label="Промо-баннер: Современная клиника для всей семьи\n[Кнопка: Записаться на приём]", width=7.5];
+  col1 [label="Направление: Терапия\nПриемы терапевта, первичная диагностика", width=3.3];
+  col2 [label="Направление: Кардиология\nКонсультации, ЭКГ, УЗИ сердца", width=3.3];
+  col3 [label="Направление: Анализы\nЗабор крови, ПЦР, экспресс-тесты", width=3.3];
+  info [label="Адрес: г. Москва, ул. Автозаводская, 16 | Телефон: +7 (495) 123-45-67", width=7.5];
+  footer [label="Подвал: © 2026 Частная клиника. Все права защищены.", width=7.5];
+
+  header -> hero;
+  hero -> col1;
+  hero -> col2;
+  hero -> col3;
+  col1 -> info;
+  col2 -> info;
+  col3 -> info;
+  info -> footer;
+
+  {rank=same; col1; col2; col3;}
+}
