@@ -1,6 +1,6 @@
 import os
 from flask import Flask
-from models import db, User, Patient, Doctor, Service, ScheduleSlot, Appointment, MedicalRecord, Visit, Document
+from models import db, User, Patient, Doctor, Service, ScheduleSlot, Appointment, MedicalRecord, Visit, Document, Specialization
 from datetime import datetime, date, time, timedelta
 
 def create_seed_app():
@@ -17,6 +17,18 @@ def seed_database():
         # Создаем таблицы, если они еще не существуют
         db.create_all()
         print("Таблицы успешно созданы/проверены.")
+
+        # Инициализируем категории (специализации)
+        try:
+            if Specialization.query.first() is None:
+                print("Создание категорий (специализаций)...")
+                spec_therapy = Specialization(name='Терапевт')
+                spec_cardiology = Specialization(name='Кардиолог')
+                db.session.add_all([spec_therapy, spec_cardiology])
+                db.session.commit()
+                print("Категории успешно созданы.")
+        except Exception as e:
+            print(f"Ошибка при инициализации категорий: {e}")
         
         # Проверяем, есть ли уже пользователи в базе данных
         try:
@@ -27,7 +39,7 @@ def seed_database():
             print(f"Ошибка при проверке наличия данных (возможно, таблицы не готовы): {e}")
             # Пытаемся создать на всякий случай
             db.create_all()
-        
+
         # 1. Создание услуг
         print("Создание услуг...")
         s_therapy = Service(

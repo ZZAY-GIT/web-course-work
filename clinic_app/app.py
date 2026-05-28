@@ -4,7 +4,7 @@ from datetime import datetime, date, time, timedelta
 from flask import Flask, render_template, redirect, url_for, request, flash, send_from_directory, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
-from models import db, User, Patient, Doctor, Service, ScheduleSlot, Appointment, MedicalRecord, Visit, Document
+from models import db, User, Patient, Doctor, Service, ScheduleSlot, Appointment, MedicalRecord, Visit, Document, Specialization
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -338,16 +338,27 @@ def doctor_cabinet():
     # Проверяем, передан ли активный приём
     active_appt_id = request.args.get('active_appt_id')
     active_appt = None
+    record = None
+    past_visits = []
     if active_appt_id:
         active_appt = Appointment.query.get(active_appt_id)
         if not active_appt or active_appt.doctor_id != doctor.id:
             flash('Приём не найден или принадлежит другому врачу.', 'error')
             return redirect(url_for('doctor_cabinet', view=view_type, date=selected_date_str))
+        
+        # Получаем данные медкарты и историю прошлых визитов пациента
+        record = active_appt.patient.medical_record
+        past_visits = Visit.query.join(Appointment).filter(
+            Appointment.patient_id == active_appt.patient.id,
+            Appointment.status == 'completed'
+        ).order_by(Visit.created_at.desc()).all()
             
     return render_template(
         'doctor_cabinet.html',
         appts=appts,
         active_appt=active_appt,
+        record=record,
+        past_visits=past_visits,
         view_type=view_type,
         selected_date=selected_date,
         prev_date=prev_date,
@@ -507,6 +518,316 @@ def delete_slot(slot_id):
         flash(f'Ошибка удаления слота: {str(e)}', 'error')
         
     return redirect(url_for('admin_panel'))
+
+# -------------------------------------------------------------
+# 6. Административные CRUD маршруты для врачей, услуг и записей
+# -------------------------------------------------------------
+
+@app.route('/admin/doctors')
+@login_required
+def admin_doctors():
+    if current_user.role != 'admin':
+        flash('Доступ запрещен.', 'error')
+        return redirect(url_for('index'))
+    doctors = Doctor.query.all()
+    specializations = Specialization.query.all()
+    return render_template('admin_doctors.html', doctors=doctors, specializations=specializations)
+
+@app.route('/admin/doctors/add', methods=['POST'])
+@login_required
+def admin_add_doctor():
+    if current_user.role != 'admin':
+        flash('Доступ запрещен.', 'error')
+        return redirect(url_for('index'))
+    full_name = request.form.get('full_name')
+    specialization = request.form.get('specialization')
+    email = request.form.get('email')
+    password = request.form.get('password')
+    cabinet = request.form.get('cabinet')
+
+    if User.query.filter_by(email=email).first():
+        flash('Пользователь с таким Email уже существует.', 'error')
+        return redirect(url_for('admin_doctors'))
+
+    try:
+        # Создаем учетную запись с ролью doctor
+        new_user = User(email=email, role='doctor')
+        new_user.set_password(password) # Безопасное хеширование пароля
+        db.session.add(new_user)
+        db.session.commit()
+
+        # Создаем профиль врача
+        new_doctor = Doctor(
+            user_id=new_user.id,
+            full_name=full_name,
+            specialization=specialization,
+            cabinet=cabinet
+        )
+        db.session.add(new_doctor)
+        db.session.commit()
+        flash(f'Врач {full_name} успешно зарегистрирован в системе!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка при регистрации врача: {str(e)}', 'error')
+
+    return redirect(url_for('admin_doctors'))
+
+@app.route('/admin/doctors/delete/<int:doctor_id>', methods=['POST'])
+@login_required
+def admin_delete_doctor(doctor_id):
+    if current_user.role != 'admin':
+        flash('Доступ запрещен.', 'error')
+        return redirect(url_for('index'))
+    doc = Doctor.query.get_or_404(doctor_id)
+    if doc.appointments:
+        flash('Невозможно удалить врача, так как к нему уже записаны пациенты.', 'error')
+        return redirect(url_for('admin_doctors'))
+
+    try:
+        user = doc.user
+        db.session.delete(doc)
+        if user:
+            db.session.delete(user)
+        db.session.commit()
+        flash('Профиль врача и его учетная запись успешно удалены.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка при удалении врача: {str(e)}', 'error')
+
+    return redirect(url_for('admin_doctors'))
+
+# -------------------------------------------------------------
+# 5.5. Административные маршруты для управления категориями (специализациями)
+# -------------------------------------------------------------
+
+@app.route('/admin/specializations')
+@login_required
+def admin_specializations():
+    if current_user.role != 'admin':
+        flash('Доступ запрещен.', 'error')
+        return redirect(url_for('index'))
+    
+    specializations = Specialization.query.order_by(Specialization.name).all()
+    
+    # Собираем статистику о количестве врачей в каждой категории
+    specs_with_counts = []
+    for spec in specializations:
+        doc_count = Doctor.query.filter_by(specialization=spec.name).count()
+        specs_with_counts.append({
+            'id': spec.id,
+            'name': spec.name,
+            'doc_count': doc_count
+        })
+        
+    return render_template('admin_specializations.html', specializations=specs_with_counts)
+
+@app.route('/admin/specializations/add', methods=['POST'])
+@login_required
+def admin_add_specialization():
+    if current_user.role != 'admin':
+        flash('Доступ запрещен.', 'error')
+        return redirect(url_for('index'))
+        
+    name = request.form.get('name', '').strip()
+    if not name:
+        flash('Название категории не может быть пустым.', 'error')
+        return redirect(url_for('admin_specializations'))
+        
+    existing = Specialization.query.filter_by(name=name).first()
+    if existing:
+        flash('Такая категория уже зарегистрирована в системе.', 'error')
+        return redirect(url_for('admin_specializations'))
+        
+    try:
+        new_spec = Specialization(name=name)
+        db.session.add(new_spec)
+        db.session.commit()
+        flash(f'Категория «{name}» успешно добавлена!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка при создании категории: {str(e)}', 'error')
+        
+    return redirect(url_for('admin_specializations'))
+
+@app.route('/admin/specializations/delete/<int:spec_id>', methods=['POST'])
+@login_required
+def admin_delete_specialization(spec_id):
+    if current_user.role != 'admin':
+        flash('Доступ запрещен.', 'error')
+        return redirect(url_for('index'))
+        
+    spec = Specialization.query.get_or_404(spec_id)
+    
+    has_doctors = Doctor.query.filter_by(specialization=spec.name).first()
+    if has_doctors:
+        flash(f'Невозможно удалить категорию «{spec.name}», так как к ней привязаны практикующие врачи.', 'error')
+        return redirect(url_for('admin_specializations'))
+        
+    try:
+        db.session.delete(spec)
+        db.session.commit()
+        flash(f'Категория «{spec.name}» успешно удалена.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка удаления категории: {str(e)}', 'error')
+        
+    return redirect(url_for('admin_specializations'))
+
+@app.route('/admin/doctors/change_password/<int:doctor_id>', methods=['POST'])
+@login_required
+def admin_change_doctor_password(doctor_id):
+    if current_user.role != 'admin':
+        flash('Доступ запрещен.', 'error')
+        return redirect(url_for('index'))
+        
+    doc = Doctor.query.get_or_404(doctor_id)
+    password = request.form.get('password')
+    
+    if not password or len(password) < 6:
+        flash('Пароль должен состоять минимум из 6 символов.', 'error')
+        return redirect(url_for('admin_doctors'))
+        
+    try:
+        user = doc.user
+        if user:
+            user.set_password(password)
+            db.session.commit()
+            flash(f'Пароль для врача {doc.full_name} успешно изменен.', 'success')
+        else:
+            flash('Учетная запись врача не найдена.', 'error')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка при смене пароля: {str(e)}', 'error')
+        
+    return redirect(url_for('admin_doctors'))
+
+@app.route('/admin/services')
+@login_required
+def admin_services():
+    if current_user.role != 'admin':
+        flash('Доступ запрещен.', 'error')
+        return redirect(url_for('index'))
+    services = Service.query.all()
+    return render_template('admin_services.html', services=services)
+
+@app.route('/admin/services/add', methods=['POST'])
+@login_required
+def admin_add_service():
+    if current_user.role != 'admin':
+        flash('Доступ запрещен.', 'error')
+        return redirect(url_for('index'))
+    title = request.form.get('title')
+    price = request.form.get('price')
+    duration_minutes = request.form.get('duration_minutes')
+    description = request.form.get('description')
+
+    try:
+        new_service = Service(
+            title=title,
+            price=float(price),
+            duration_minutes=int(duration_minutes),
+            description=description
+        )
+        db.session.add(new_service)
+        db.session.commit()
+        flash('Медицинская услуга успешно создана!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка добавления услуги: {str(e)}', 'error')
+
+    return redirect(url_for('admin_services'))
+
+@app.route('/admin/services/edit/<int:service_id>', methods=['POST'])
+@login_required
+def admin_edit_service(service_id):
+    if current_user.role != 'admin':
+        flash('Доступ запрещен.', 'error')
+        return redirect(url_for('index'))
+    srv = Service.query.get_or_404(service_id)
+    title = request.form.get('title')
+    price = request.form.get('price')
+    duration_minutes = request.form.get('duration_minutes')
+    description = request.form.get('description')
+
+    try:
+        srv.title = title
+        srv.price = float(price)
+        srv.duration_minutes = int(duration_minutes)
+        srv.description = description
+        db.session.commit()
+        flash('Услуга успешно обновлена!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка обновления услуги: {str(e)}', 'error')
+
+    return redirect(url_for('admin_services'))
+
+@app.route('/admin/services/delete/<int:service_id>', methods=['POST'])
+@login_required
+def admin_delete_service(service_id):
+    if current_user.role != 'admin':
+        flash('Доступ запрещен.', 'error')
+        return redirect(url_for('index'))
+    srv = Service.query.get_or_404(service_id)
+    if srv.appointments:
+        flash('Невозможно удалить услугу, так как по ней уже зарегистрированы приёмы.', 'error')
+        return redirect(url_for('admin_services'))
+
+    try:
+        db.session.delete(srv)
+        db.session.commit()
+        flash('Медицинская услуга успешно удалена.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка удаления услуги: {str(e)}', 'error')
+
+    return redirect(url_for('admin_services'))
+
+@app.route('/admin/appointments')
+@login_required
+def admin_appointments():
+    if current_user.role != 'admin':
+        flash('Доступ запрещен.', 'error')
+        return redirect(url_for('index'))
+    appts = Appointment.query.join(ScheduleSlot).order_by(ScheduleSlot.date.desc(), ScheduleSlot.start_time.desc()).all()
+    return render_template('admin_appointments.html', appts=appts)
+
+@app.route('/admin/appointments/confirm/<int:appt_id>', methods=['POST'])
+@login_required
+def admin_confirm_appointment(appt_id):
+    if current_user.role != 'admin':
+        flash('Доступ запрещен.', 'error')
+        return redirect(url_for('index'))
+    appt = Appointment.query.get_or_404(appt_id)
+    try:
+        appt.status = 'confirmed'
+        db.session.commit()
+        flash('Запись пациента успешно подтверждена!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка подтверждения записи: {str(e)}', 'error')
+
+    return redirect(url_for('admin_appointments'))
+
+@app.route('/admin/appointments/cancel/<int:appt_id>', methods=['POST'])
+@login_required
+def admin_cancel_appointment(appt_id):
+    if current_user.role != 'admin':
+        flash('Доступ запрещен.', 'error')
+        return redirect(url_for('index'))
+    appt = Appointment.query.get_or_404(appt_id)
+    try:
+        slot = appt.slot
+        if slot:
+            slot.status = 'free'
+        db.session.delete(appt) # Удаляем саму запись, чтобы не нарушать unique constraint на slot_id!
+        db.session.commit()
+        flash('Запись пациента успешно отменена, временной интервал освобожден.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка отмены записи: {str(e)}', 'error')
+
+    return redirect(url_for('admin_appointments'))
 
 # -------------------------------------------------------------
 # Инициализация и запуск приложения

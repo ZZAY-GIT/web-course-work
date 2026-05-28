@@ -81,6 +81,11 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: var(--shadow-md);
 }
 
+/* Disable card hover movement when a modal is open to prevent visual shaking feedback loops */
+body.modal-open .card:hover {
+    transform: none !important;
+}
+
 .card-header {
     background-color: transparent;
     border-bottom: 1px solid var(--border);
@@ -218,4 +223,28 @@ footer {
     color: var(--text-muted);
     font-size: 0.9rem;
     padding: 2rem 0;
+}
+
+/* Sidebar Navigation overrides to prevent invisible text active states */
+.list-group-item {
+    transition: var(--transition);
+    border: none !important;
+    border-radius: 8px !important;
+    margin-bottom: 6px !important;
+    color: var(--text-muted) !important;
+}
+
+.list-group-item-action:hover {
+    background-color: var(--primary-light) !important;
+    color: var(--primary) !important;
+}
+
+.list-group-item.active {
+    background-color: var(--primary-light) !important;
+    color: var(--primary) !important;
+    font-weight: 600 !important;
+}
+
+.list-group-item.active i {
+    color: var(--primary) !important;
 }

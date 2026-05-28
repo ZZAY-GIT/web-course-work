@@ -17,11 +17,11 @@
                     <h2 class="h6 font-bold text-muted text-uppercase tracking-wider">Навигация</h2>
                 </div>
                 <div class="list-group list-group-flush shadow-sm rounded">
-                    <a href="#" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-people-fill me-2 text-primary"></i>Управление врачами</a>
-                    <a href="#" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-file-earmark-medical me-2 text-primary"></i>Управление услугами</a>
+                    <a href="{{ url_for('admin_doctors') }}" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-people-fill me-2 text-primary"></i>Управление врачами</a>
+                    <a href="{{ url_for('admin_specializations') }}" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-tags-fill me-2 text-primary"></i>Управление категориями</a>
+                    <a href="{{ url_for('admin_services') }}" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-file-earmark-medical me-2 text-primary"></i>Управление услугами</a>
                     <a href="{{ url_for('admin_panel') }}" class="list-group-item list-group-item-action py-2 font-medium text-primary active bg-primary-light border-0"><i class="bi bi-calendar-range-fill me-2"></i>Расписание клиники</a>
-                    <a href="#" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-person-bounding-box me-2 text-primary"></i>База пациентов</a>
-                    <a href="#" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-journal-text me-2 text-primary"></i>Управление записями</a>
+                    <a href="{{ url_for('admin_appointments') }}" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-journal-text me-2 text-primary"></i>Управление записями</a>
                 </div>
             </div>
         </div>

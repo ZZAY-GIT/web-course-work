@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Управление записями{% endblock %}
+
+{% block content %}
+<div class="row py-3">
+    <div class="col-12 text-center mb-4">
+        <h1 class="h2 text-main font-semibold">Панель управления клиникой</h1>
+        <p class="text-muted">Администрирование врачей, медицинских услуг, расписания приёмов и учётных записей пользователей.</p>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- 1. Боковое меню (Левая колонка) -->
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm border-0">
+                <div class="card-header bg-white border-0 p-0 mb-3">
+                    <h2 class="h6 font-bold text-muted text-uppercase tracking-wider">Навигация</h2>
+                </div>
+                <div class="list-group list-group-flush shadow-sm rounded">
+                    <a href="{{ url_for('admin_doctors') }}" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-people-fill me-2 text-primary"></i>Управление врачами</a>
+                    <a href="{{ url_for('admin_specializations') }}" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-tags-fill me-2 text-primary"></i>Управление категориями</a>
+                    <a href="{{ url_for('admin_services') }}" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-file-earmark-medical me-2 text-primary"></i>Управление услугами</a>
+                    <a href="{{ url_for('admin_panel') }}" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-calendar-range-fill me-2 text-primary"></i>Расписание клиники</a>
+                    <a href="{{ url_for('admin_appointments') }}" class="list-group-item list-group-item-action py-2 font-medium text-primary active bg-primary-light border-0"><i class="bi bi-journal-text me-2"></i>Управление записями</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Основная рабочая область (Правая колонка) -->
+        <div class="col-md-9">
+            <!-- Блок: Таблица записей на прием -->
+            <div class="card p-4 shadow-sm border-0">
+                <h2 class="h5 font-semibold text-main border-bottom pb-2 mb-3">
+                    <i class="bi bi-journal-text text-primary me-2"></i>Все записи пациентов на приём
+                </h2>
+
+                {% if appts %}
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Дата / Время</th>
+                                    <th>Пациент</th>
+                                    <th>Специалист / Услуга</th>
+                                    <th>Статус записи</th>
+                                    <th class="text-end">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appt in appts %}
+                                <tr>
+                                    <td>
+                                        <div class="font-semibold text-main small">{{ appt.slot.date.strftime('%d.%m.%Y') }}</div>
+                                        <div class="text-muted small"><i class="bi bi-clock me-1"></i>{{ appt.slot.start_time.strftime('%H:%M') }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="font-semibold text-main small">{{ appt.patient.full_name }}</div>
+                                        <div class="text-muted small"><i class="bi bi-telephone me-1"></i>{{ appt.patient.phone }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="font-semibold text-main small">{{ appt.doctor.full_name.split()[0] }} {{ appt.doctor.full_name.split()[1][0] }}.{{ appt.doctor.full_name.split()[2][0] }}.</div>
+                                        <div class="text-muted small" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ appt.service.title }}</div>
+                                    </td>
+                                    <td>
+                                        {% if appt.status == 'completed' %}
+                                            <span class="badge bg-success-light text-success font-semibold px-2 py-1 rounded-pill small">Завершен</span>
+                                        {% elif appt.status == 'cancelled' %}
+                                            <span class="badge bg-danger-light text-danger font-semibold px-2 py-1 rounded-pill small">Отменен</span>
+                                        {% elif appt.status == 'confirmed' %}
+                                            <span class="badge bg-primary-light text-primary font-semibold px-2 py-1 rounded-pill small">Подтвержден</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-light text-secondary font-semibold px-2 py-1 rounded-pill small">Создан</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end text-nowrap">
+                                        {% if appt.status == 'created' %}
+                                            <form action="{{ url_for('admin_confirm_appointment', appt_id=appt.id) }}" method="POST" style="display:inline;" class="me-1">
+                                                <button type="submit" class="btn btn-success btn-sm py-0 px-2" style="font-size: 0.8rem;">
+                                                    <i class="bi bi-check-circle-fill"></i> Подтвердить
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        
+                                        {% if appt.status != 'completed' and appt.status != 'cancelled' %}
+                                            <form action="{{ url_for('admin_cancel_appointment', appt_id=appt.id) }}" method="POST" onsubmit="return confirm('Вы действительно хотите отменить эту запись?');" style="display:inline;">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 0.8rem;" title="Отменить запись">
+                                                    <i class="bi bi-x-circle-fill"></i> Отменить
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <span class="text-muted small">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="p-4 bg-light rounded border text-center text-muted">
+                        Активные или прошедшие записи пациентов на прием отсутствуют.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Системный подвал -->
+    <div class="col-12">
+        <div class="text-center p-3 bg-white rounded border text-muted small shadow-sm">
+            <i class="bi bi-shield-fill-exclamation text-warning me-1"></i>
+            Административный интерфейс управления ресурсами клиники. Сессия администратора активна. &copy; 2026
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}Управление врачами{% endblock %}
+
+{% block content %}
+<div class="row py-3">
+    <div class="col-12 text-center mb-4">
+        <h1 class="h2 text-main font-semibold">Панель управления клиникой</h1>
+        <p class="text-muted">Администрирование врачей, медицинских услуг, расписания приёмов и учётных записей пользователей.</p>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- 1. Боковое меню (Левая колонка) -->
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm border-0">
+                <div class="card-header bg-white border-0 p-0 mb-3">
+                    <h2 class="h6 font-bold text-muted text-uppercase tracking-wider">Навигация</h2>
+                </div>
+                <div class="list-group list-group-flush shadow-sm rounded">
+                    <a href="{{ url_for('admin_doctors') }}" class="list-group-item list-group-item-action py-2 font-medium text-primary active bg-primary-light border-0"><i class="bi bi-people-fill me-2"></i>Управление врачами</a>
+                    <a href="{{ url_for('admin_specializations') }}" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-tags-fill me-2 text-primary"></i>Управление категориями</a>
+                    <a href="{{ url_for('admin_services') }}" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-file-earmark-medical me-2 text-primary"></i>Управление услугами</a>
+                    <a href="{{ url_for('admin_panel') }}" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-calendar-range-fill me-2 text-primary"></i>Расписание клиники</a>
+                    <a href="{{ url_for('admin_appointments') }}" class="list-group-item list-group-item-action py-2 font-medium text-muted"><i class="bi bi-journal-text me-2 text-primary"></i>Управление записями</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Основная рабочая область (Правая колонка) -->
+        <div class="col-md-9">
+            <!-- Блок 2.1: Добавление нового врача -->
+            <div class="card p-4 shadow-sm border-0 mb-4">
+                <h2 class="h5 font-semibold text-main border-bottom pb-2 mb-3">
+                    <i class="bi bi-person-plus-fill text-primary me-2"></i>Зарегистрировать нового врача
+                </h2>
+                
+                <form action="{{ url_for('admin_add_doctor') }}" method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="doc_name" class="form-label small text-muted">ФИО врача</label>
+                            <input type="text" class="form-control" id="doc_name" name="full_name" required placeholder="Петров Петр Петрович">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="doc_spec" class="form-label small text-muted">Специализация (Категория)</label>
+                            <select class="form-select" id="doc_spec" name="specialization" required>
+                                <option value="" disabled selected>Выберите категорию...</option>
+                                {% for spec in specializations %}
+                                    <option value="{{ spec.name }}">{{ spec.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="doc_email" class="form-label small text-muted">Электронная почта (Email)</label>
+                            <input type="email" class="form-control" id="doc_email" name="email" required placeholder="doctor@clinic.ru">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="doc_pass" class="form-label small text-muted">Пароль</label>
+                            <input type="password" class="form-control" id="doc_pass" name="password" required placeholder="Минимум 6 символов">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="doc_cab" class="form-label small text-muted">Номер кабинета</label>
+                            <input type="text" class="form-control" id="doc_cab" name="cabinet" required placeholder="Кабинет 303">
+                        </div>
+                        <div class="col-12 text-end">
+                            <button type="submit" class="btn btn-primary shadow-sm">
+                                <i class="bi bi-person-check me-1"></i>Добавить врача в систему
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Блок 2.2: Список врачей -->
+            <div class="card p-4 shadow-sm border-0">
+                <h2 class="h5 font-semibold text-main border-bottom pb-2 mb-3">
+                    <i class="bi bi-people text-primary me-2"></i>Список специалистов клиники
+                </h2>
+
+                {% if doctors %}
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Врач</th>
+                                    <th>Кабинет</th>
+                                    <th>Специализация</th>
+                                    <th>Учетная запись</th>
+                                    <th class="text-end">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in doctors %}
+                                <tr>
+                                    <td>
+                                        <div class="font-semibold text-main small">{{ doc.full_name }}</div>
+                                    </td>
+                                    <td class="small font-semibold">{{ doc.cabinet }}</td>
+                                    <td><span class="badge bg-primary-light text-primary font-medium px-2 py-1 rounded">{{ doc.specialization }}</span></td>
+                                    <td class="small text-muted">{{ doc.user.email }}</td>
+                                    <td class="text-end text-nowrap">
+                                        <!-- Кнопка смены пароля -->
+                                        <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 me-1" style="font-size: 0.8rem;" data-bs-toggle="modal" data-bs-target="#changePassModal{{ doc.id }}">
+                                            <i class="bi bi-key-fill"></i> Смена пароля
+                                        </button>
+                                        
+                                        <form action="{{ url_for('admin_delete_doctor', doctor_id=doc.id) }}" method="POST" onsubmit="return confirm('Вы действительно хотите удалить профиль этого врача и его учетную запись?');" style="display:inline;">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 0.8rem;" {% if doc.appointments %}disabled title="Нельзя удалить врача, у которого есть приёмы"{% endif %}>
+                                                <i class="bi bi-trash-fill"></i> Удалить
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+
+                                <!-- Модальное окно смены пароля врача -->
+                                <div class="modal fade" id="changePassModal{{ doc.id }}" tabindex="-1" aria-labelledby="changePassModalLabel{{ doc.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content border-0 shadow-lg">
+                                            <div class="modal-header bg-primary text-white border-0">
+                                                <h5 class="modal-title font-semibold" id="changePassModalLabel{{ doc.id }}"><i class="bi bi-key-fill me-2"></i>Сменить пароль врача</h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form action="{{ url_for('admin_change_doctor_password', doctor_id=doc.id) }}" method="POST">
+                                                <div class="modal-body text-start p-4">
+                                                    <div class="mb-3">
+                                                        <label class="form-label small text-muted d-block">Врач</label>
+                                                        <div class="form-control-plaintext font-semibold text-main">{{ doc.full_name }}</div>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="new_pass{{ doc.id }}" class="form-label small text-muted">Новый пароль</label>
+                                                        <input type="password" class="form-control" id="new_pass{{ doc.id }}" name="password" required minlength="6" placeholder="Минимум 6 символов">
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-top p-3 d-flex justify-content-end gap-2 bg-light">
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+                                                    <button type="submit" class="btn btn-primary btn-sm shadow-sm">Сменить пароль</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="p-4 bg-light rounded border text-center text-muted">
+                        Врачи в системе не зарегистрированы. Вы можете добавить нового специалиста с помощью формы выше.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Системный подвал -->
+    <div class="col-12">
+        <div class="text-center p-3 bg-white rounded border text-muted small shadow-sm">
+            <i class="bi bi-shield-fill-exclamation text-warning me-1"></i>
+            Административный интерфейс управления ресурсами клиники. Сессия администратора активна. &copy; 2026
+        </div>
+    </div>
+</div>
+{% endblock %}
