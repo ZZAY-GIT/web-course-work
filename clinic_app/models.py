@@ -129,3 +129,13 @@ class Document(db.Model):
     file_path = db.Column(db.String(255), nullable=False)
     file_type = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def icon_class(self):
+        ext = self.file_path.split('.')[-1].lower() if '.' in self.file_path else ''
+        if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']:
+            return 'bi-file-earmark-image text-success'
+        elif ext == 'pdf':
+            return 'bi-file-earmark-pdf-fill text-danger'
+        else:
+            return 'bi-file-earmark text-primary'

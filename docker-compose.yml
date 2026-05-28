@@ -1,6 +1,22 @@
-version: '3.8'
-
 services:
+  db:
+    image: mirror.gcr.io/library/postgres:15-alpine
+    container_name: clinic_db_container
+    environment:
+      POSTGRES_DB: clinic_db
+      POSTGRES_USER: clinic_user
+      POSTGRES_PASSWORD: clinic_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinic_user -d clinic_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
   web:
     build: .
     image: clinic-app:latest
@@ -11,9 +27,14 @@ services:
       - FLASK_APP=app.py
       - FLASK_DEBUG=1
       - SECRET_KEY=clinic-super-secret-key-2026
+      - DATABASE_URL=postgresql://clinic_user:clinic_password@db:5432/clinic_db
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
-      # Монтирование тома для сохранения локальной базы данных SQLite на хост-машине
-      - ./clinic_app/instance:/app/clinic_app/instance
       # Монтирование тома для сохранения медицинских документов и заключений врачей
       - ./clinic_app/static/uploads:/app/clinic_app/static/uploads
     restart: always
+
+volumes:
+  postgres_data:

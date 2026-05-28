@@ -73,54 +73,63 @@
                     <i class="bi bi-clock-history text-primary me-2"></i>История посещений
                 </h2>
                 {% if past_appts %}
-                    <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
-                        <table class="table table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Дата</th>
-                                    <th>Врач / Услуга</th>
-                                    <th>Диагноз и рекомендации</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for appt in past_appts %}
-                                <tr>
-                                    <td class="small font-medium text-nowrap">{{ appt.slot.date.strftime('%d.%m.%Y') }}</td>
-                                    <td>
-                                        <div class="font-semibold text-main small">{{ appt.doctor.full_name.split()[0] }} {{ appt.doctor.full_name.split()[1][0] }}.{{ appt.doctor.full_name.split()[2][0] }}.</div>
-                                        <div class="text-muted small">{{ appt.service.title }}</div>
-                                    </td>
-                                    <td>
-                                        {% if appt.visit %}
-                                            <div class="text-main small font-medium mb-1">{{ appt.visit.diagnosis }}</div>
-                                            <div class="text-muted small" style="white-space: pre-line;">{{ appt.visit.recommendations }}</div>
-                                            
-                                            {% if appt.visit.documents %}
-                                                <div class="mt-2 border-top pt-2">
-                                                    <span class="text-muted small d-block mb-1"><strong>Файлы приёма:</strong></span>
-                                                    {% for doc in appt.visit.documents %}
-                                                        <div class="d-flex align-items-center justify-content-between bg-white border p-1 px-2 rounded mb-1 shadow-sm" style="font-size: 0.8rem;">
-                                                            <span class="text-main small"><i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>{{ doc.file_type }}</span>
-                                                            <div class="btn-group shadow-sm">
-                                                                <a href="{{ url_for('download_document', doc_id=doc.id, preview=1) }}" target="_blank" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size: 0.7rem;" title="Открыть в браузере">
-                                                                    <i class="bi bi-eye me-1"></i>Открыть
-                                                                </a>
-                                                                <a href="{{ url_for('download_document', doc_id=doc.id) }}" class="btn btn-outline-primary btn-sm py-0 px-2" style="font-size: 0.7rem;" title="Скачать файл">
-                                                                    <i class="bi bi-download me-1"></i>Скачать
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    {% endfor %}
-                                                </div>
-                                            {% endif %}
-                                        {% else %}
-                                            <span class="text-muted small">Заключение не оформлено</span>
+                    <div style="max-height: 380px; overflow-y: auto; padding-right: 5px;">
+                        {% for appt in past_appts %}
+                            <div class="card p-3 mb-3 border-light rounded bg-light hover-shadow transition-all">
+                                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                                    <span class="small font-semibold text-muted">
+                                        <i class="bi bi-calendar3 me-1 text-primary"></i>{{ appt.slot.date.strftime('%d.%m.%Y') }}
+                                        <i class="bi bi-clock ms-2 me-1 text-primary"></i>{{ appt.slot.start_time.strftime('%H:%M') }}
+                                    </span>
+                                    <span class="badge bg-success text-white px-2 py-1 rounded-pill small">Завершен</span>
+                                </div>
+                                <div class="mb-2">
+                                    <h4 class="h6 font-semibold text-main mb-1">{{ appt.service.title }}</h4>
+                                    <p class="text-muted small mb-0">
+                                        <i class="bi bi-person-badge me-1"></i>Врач: <strong>{{ appt.doctor.full_name }}</strong> ({{ appt.doctor.specialization }})
+                                    </p>
+                                </div>
+                                {% if appt.visit %}
+                                    <div class="bg-white p-2 rounded border mb-2 shadow-sm">
+                                        <div class="small text-main font-semibold mb-1">
+                                            <i class="bi bi-patch-check-fill text-success me-1"></i>Диагноз:
+                                        </div>
+                                        <p class="text-muted small mb-2 font-medium">{{ appt.visit.diagnosis }}</p>
+                                        
+                                        {% if appt.visit.complaints %}
+                                            <div class="small text-main font-semibold mb-1">Жалобы:</div>
+                                            <p class="text-muted small mb-2">{{ appt.visit.complaints }}</p>
                                         {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                        
+                                        <div class="small text-main font-semibold mb-1">Назначения и рекомендации:</div>
+                                        <p class="text-muted small mb-0" style="white-space: pre-line;">{{ appt.visit.recommendations }}</p>
+                                    </div>
+                                    
+                                    {% if appt.visit.documents %}
+                                        <div class="mt-2 border-top pt-2">
+                                            <span class="text-muted small d-block mb-2"><strong>Прикрепленные документы:</strong></span>
+                                            <div class="d-flex flex-column gap-2">
+                                                {% for doc in appt.visit.documents %}
+                                                    <div class="d-flex align-items-center justify-content-between bg-white border p-2 rounded shadow-sm">
+                                                        <span class="text-main small"><i class="bi {{ doc.icon_class }} me-1"></i>{{ doc.file_type }}</span>
+                                                        <div class="btn-group shadow-sm">
+                                                            <a href="{{ url_for('download_document', doc_id=doc.id, preview=1) }}" target="_blank" class="btn btn-outline-secondary btn-sm py-1 px-2" style="font-size: 0.75rem;">
+                                                                <i class="bi bi-eye me-1"></i>Открыть
+                                                            </a>
+                                                            <a href="{{ url_for('download_document', doc_id=doc.id) }}" class="btn btn-outline-primary btn-sm py-1 px-2" style="font-size: 0.75rem;">
+                                                                <i class="bi bi-download me-1"></i>Скачать
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted small">Заключение не оформлено</span>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
                     </div>
                 {% else %}
                     <div class="p-4 bg-light rounded border text-center text-muted">
@@ -164,7 +173,7 @@
                         <div class="list-group shadow-sm rounded">
                             {% for doc in documents %}
                             <div class="list-group-item d-flex justify-content-between align-items-center p-2 border-light">
-                                <span class="small text-main"><i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>{{ doc.file_type }}</span>
+                                <span class="small text-main"><i class="bi {{ doc.icon_class }} me-1"></i>{{ doc.file_type }}</span>
                                 <div class="btn-group shadow-sm">
                                     <a href="{{ url_for('download_document', doc_id=doc.id, preview=1) }}" target="_blank" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.75rem;">
                                         <i class="bi bi-eye me-1"></i>Открыть

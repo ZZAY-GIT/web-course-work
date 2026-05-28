@@ -118,7 +118,7 @@
         <!-- Подвал службы поддержки -->
         <div class="text-center p-3 bg-white rounded border text-muted small shadow-sm">
             <i class="bi bi-headset text-primary me-1"></i>
-            <strong>Подвал:</strong> Возникли трудности с записью? Позвоните в нашу службу поддержки: <strong>+7 (495) 123-45-67</strong> | &copy; 2026
+            Возникли трудности с записью? Позвоните в нашу службу поддержки: <strong>+7 (495) 123-45-67</strong> | &copy; 2026
         </div>
     </div>
 </div>
@@ -228,8 +228,24 @@
         
         if (!docId || !selectedDate) return;
         
-        // Find matching slots
-        const slots = slotsData.filter(s => s.doctor_id == docId && s.date === selectedDate);
+        const now = new Date();
+        const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+        
+        // Отбираем только свободные слоты, которые не находятся в прошлом
+        const slots = slotsData.filter(s => {
+            if (s.doctor_id != docId || s.date !== selectedDate || s.status !== 'free') {
+                return false;
+            }
+            if (selectedDate === todayStr) {
+                const [slotH, slotM] = s.time.split(':').map(Number);
+                const currentH = now.getHours();
+                const currentM = now.getMinutes();
+                if (slotH < currentH || (slotH === currentH && slotM <= currentM)) {
+                    return false; // Отсекаем прошедшие сегодня по времени слоты
+                }
+            }
+            return true;
+        });
         
         slotsGrid.innerHTML = '';
         
@@ -249,33 +265,28 @@
             
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'btn w-100 shadow-sm ' + (slot.status === 'free' ? 'btn-outline-primary' : 'btn-light text-muted border-0');
+            btn.className = 'btn w-100 shadow-sm btn-outline-primary';
             btn.textContent = slot.time;
             
-            if (slot.status !== 'free') {
-                btn.disabled = true;
-                btn.title = 'Занят';
-            } else {
-                btn.addEventListener('click', function() {
-                    // Unselect others
-                    document.querySelectorAll('#slotsGrid .btn').forEach(b => {
-                        if (b.classList.contains('btn-primary')) {
-                            b.classList.remove('btn-primary');
-                            b.classList.add('btn-outline-primary');
-                        }
-                    });
-                    
-                    // Select this one
-                    btn.classList.remove('btn-outline-primary');
-                    btn.classList.add('btn-primary');
-                    
-                    // Store slot id
-                    slotIdInput.value = slot.id;
-                    
-                    // Show summary
-                    updateSummary(slot.time);
+            btn.addEventListener('click', function() {
+                // Снимаем выделение с других кнопок
+                document.querySelectorAll('#slotsGrid .btn').forEach(b => {
+                    if (b.classList.contains('btn-primary')) {
+                        b.classList.remove('btn-primary');
+                        b.classList.add('btn-outline-primary');
+                    }
                 });
-            }
+                
+                // Выделяем текущую кнопку
+                btn.classList.remove('btn-outline-primary');
+                btn.classList.add('btn-primary');
+                
+                // Записываем ID выбранного слота
+                slotIdInput.value = slot.id;
+                
+                // Отображаем резюме
+                updateSummary(slot.time);
+            });
             
             col.appendChild(btn);
             slotsGrid.appendChild(col);

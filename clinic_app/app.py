@@ -215,6 +215,12 @@ def confirm_booking():
         flash('Выбранный временной слот уже занят. Пожалуйста, выберите другое время.', 'error')
         return redirect(url_for('booking_page'))
         
+    # Защита от записи в прошлое (дата и время)
+    slot_datetime = datetime.combine(slot.date, slot.start_time)
+    if slot_datetime < datetime.now():
+        flash('Выбранное время приема уже прошло. Невозможно записаться в прошлое.', 'error')
+        return redirect(url_for('booking_page'))
+        
     try:
         # Создаем запись на прием
         appt = Appointment(
@@ -246,6 +252,11 @@ def cancel_booking(appt_id):
     # Права доступа
     if appt.patient_id != current_user.patient.id:
         flash('Доступ запрещен.', 'error')
+        return redirect(url_for('patient_cabinet'))
+        
+    # Защита: нельзя отменить уже завершенный прием
+    if appt.status == 'completed':
+        flash('Нельзя отменить уже завершенный прием.', 'error')
         return redirect(url_for('patient_cabinet'))
         
     try:
@@ -362,6 +373,11 @@ def save_visit():
         flash('Доступ запрещен.', 'error')
         return redirect(url_for('doctor_cabinet'))
         
+    # Защита: нельзя повторно оформить уже завершенный прием
+    if appt.status == 'completed':
+        flash('Этот прием уже успешно завершен и занесен в историю.', 'error')
+        return redirect(url_for('doctor_cabinet'))
+        
     try:
         # 1. Создаем результат посещения (Visit)
         record = appt.patient.medical_record
@@ -386,7 +402,7 @@ def save_visit():
             
             new_doc = Document(
                 patient_id=appt.patient.id,
-                visit_id=visit.id,
+                visit=visit,
                 file_path=filename,
                 file_type=file_type
             )

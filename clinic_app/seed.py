@@ -14,9 +14,19 @@ def seed_database():
     app = create_seed_app()
     with app.app_context():
         print("Инициализация базы данных...")
-        db.drop_all()  # Пересоздаем таблицы для чистоты данных
+        # Создаем таблицы, если они еще не существуют
         db.create_all()
-        print("Таблицы успешно созданы.")
+        print("Таблицы успешно созданы/проверены.")
+        
+        # Проверяем, есть ли уже пользователи в базе данных
+        try:
+            if User.query.first() is not None:
+                print("База данных уже содержит данные, пропускаем наполнение.")
+                return
+        except Exception as e:
+            print(f"Ошибка при проверке наличия данных (возможно, таблицы не готовы): {e}")
+            # Пытаемся создать на всякий случай
+            db.create_all()
         
         # 1. Создание услуг
         print("Создание услуг...")
@@ -216,7 +226,8 @@ def seed_database():
         print("Учетные записи для тестирования:")
         print("1. Администратор:  admin@clinic.ru  (пароль: admin123)")
         print("2. Врач (терапевт): doctor@clinic.ru (пароль: doctor123)")
-        print("3. Пациент (ЛК):    patient@clinic.ru(пароль: patient123)")
+        print("3. Врач (кардиолог): doctor2@clinic.ru(пароль: doctor223)")
+        print("4. Пациент (ЛК):    patient@clinic.ru(пароль: patient123)")
 
 if __name__ == "__main__":
     seed_database()

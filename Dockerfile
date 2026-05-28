@@ -16,9 +16,6 @@ COPY clinic_app/ /app/clinic_app/
 # Установка рабочей директории внутри папки приложения
 WORKDIR /app/clinic_app
 
-# Инициализация базы данных SQLite перед запуском
-RUN python seed.py
-
 # Переменные окружения для Flask
 ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
@@ -27,5 +24,5 @@ ENV FLASK_RUN_PORT=5000
 # Открытие порта 5000
 EXPOSE 5000
 
-# Команда для запуска приложения через Flask CLI
-CMD ["python", "app.py"]
+# Команда для запуска инициализации бд и приложения
+CMD ["sh", "-c", "python seed.py && python app.py"]
