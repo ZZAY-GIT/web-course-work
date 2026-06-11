@@ -25,4 +25,4 @@ ENV FLASK_RUN_PORT=5000
 EXPOSE 5000
 
 # Команда для запуска инициализации бд и приложения
-CMD ["sh", "-c", "python seed.py && python app.py"]
+CMD ["sh", "-c", "python seed.py && gunicorn --bind 0.0.0.0:${PORT:-5000} app:app"]

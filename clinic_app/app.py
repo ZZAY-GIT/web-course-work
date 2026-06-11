@@ -16,6 +16,11 @@ login_manager.login_view = 'auth_page'
 login_manager.login_message = "Пожалуйста, авторизуйтесь для доступа к этой странице."
 login_manager.login_message_category = "info"
 
+# Создание папки для загрузок при старте (в т.ч. через gunicorn)
+with app.app_context():
+    os.makedirs(os.path.join(os.path.dirname(__file__), 'static', 'uploads'), exist_ok=True)
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
