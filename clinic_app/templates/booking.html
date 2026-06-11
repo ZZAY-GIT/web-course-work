@@ -22,7 +22,7 @@
                         <div class="mb-3">
                             <label for="specialty" class="form-label small text-muted">Выберите специальность врача</label>
                             <select class="form-select" id="specialty" name="specialty" required>
-                                <option value="" disabled selected>-- Выберите направление --</option>
+                                <option value="" disabled selected>Выберите направление</option>
                                 <option value="Терапевт">Терапия</option>
                                 <option value="Кардиолог">Кардиология</option>
                             </select>
@@ -31,7 +31,7 @@
                         <div class="mb-2">
                             <label for="doctor" class="form-label small text-muted">Выберите конкретного врача</label>
                             <select class="form-select" id="doctor" name="doctor_id" required disabled>
-                                <option value="" disabled selected>-- Сначала выберите направление --</option>
+                                <option value="" disabled selected>Сначала выберите направление</option>
                                 {% for doc in doctors %}
                                     <option value="{{ doc.id }}" data-spec="{{ doc.specialization }}" data-name="{{ doc.full_name }}">{{ doc.full_name }} ({{ doc.cabinet }})</option>
                                 {% endfor %}
@@ -50,7 +50,7 @@
                         <div class="mb-3">
                             <label for="service" class="form-label small text-muted">Выберите медицинскую услугу</label>
                             <select class="form-select" id="service" name="service_id" required disabled>
-                                <option value="" disabled selected>-- Сначала выберите направление --</option>
+                                <option value="" disabled selected>Сначала выберите направление</option>
                                 {% for srv in services %}
                                     <option value="{{ srv.id }}" data-spec="{% if 'терап' in srv.title.lower() or 'анализ' in srv.title.lower() %}Терапевт{% else %}Кардиолог{% endif %}" data-title="{{ srv.title }}" data-price="{{ srv.price | int }}" data-dur="{{ srv.duration_minutes }}">
                                         {{ srv.title }} ({{ srv.price | int }} ₽)
@@ -151,7 +151,7 @@
         
         // Filter doctors dropdown
         doctorSelect.disabled = false;
-        doctorSelect.innerHTML = '<option value="" disabled selected>-- Выберите врача --</option>';
+        doctorSelect.innerHTML = '<option value="" disabled selected>Выберите врача</option>';
         Array.from(doctorSelect.options).forEach(opt => {
             // Restore hidden options
         });
@@ -169,7 +169,7 @@
 
         // Filter services dropdown
         serviceSelect.disabled = false;
-        serviceSelect.innerHTML = '<option value="" disabled selected>-- Выберите услугу --</option>';
+        serviceSelect.innerHTML = '<option value="" disabled selected>Выберите услугу</option>';
         {% for srv in services %}
             if ("{% if 'терап' in srv.title.lower() or 'анализ' in srv.title.lower() %}Терапевт{% else %}Кардиолог{% endif %}" === spec) {
                 const opt = document.createElement('option');
