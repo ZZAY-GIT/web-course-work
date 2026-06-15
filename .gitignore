@@ -38,6 +38,7 @@ clinic_app/clinic.db
 *.dvi
 *.lof
 *.lot
+*.zip
 report/*.aux
 report/*.log
 report/*.out
