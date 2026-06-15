@@ -24,5 +24,5 @@ ENV FLASK_RUN_PORT=5000
 # Открытие порта 5000
 EXPOSE 5000
 
-# Команда для запуска инициализации бд и приложения
-CMD ["sh", "-c", "python seed.py && python app.py"]
+# Команда для запуска приложения с инициализацией бд только при первом запуске
+CMD ["sh", "-c", "mkdir -p static/uploads && if [ ! -f static/uploads/.seeded ]; then python seed.py && touch static/uploads/.seeded; fi && python app.py"]
