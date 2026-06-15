@@ -49,3 +49,5 @@ report/*.dvi
 report/*.lof
 report/*.lot
 *.ruff_cache
+clinic_app/static/uploads/
+
